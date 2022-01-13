@@ -1,3 +1,7 @@
+"""
+binary search tree implementation. contains all basic functionality
+required to operate the tree.
+"""
 
 class Node:
     """
