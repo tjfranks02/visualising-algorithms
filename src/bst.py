@@ -2,6 +2,20 @@
 binary search tree implementation. contains all basic functionality
 required to operate the tree.
 """
+from sys import path_hooks
+
+"""
+instructions describing all binary search tree operations. used to describe the
+path taken to perform insert, delete, search actions.
+"""
+FIND = "FIND"
+SEARCH = "SEARCH"
+SWAP = "SWAP"
+INSERT = "INSERT"
+NOT_FOUND = "NOT_FOUND"
+DUPLICATE = "DUPLICATE"
+DELETE = "DELETE"
+RESTRUCTURE = "RESTRUCTURE"
 
 class Node:
     """
@@ -81,28 +95,95 @@ def create(value):
     return Node(value)
 
 
+def h_insert(root, value, path):
+    """
+    helper function to insert a node into a binary search tree.
+
+    parameters:
+        root (Node): the tree to insert into
+        value (int): the value to try and insert into the tree
+        path [(string, int)]: the path and operations taken to perform the
+        insertion
+
+    returns (Node, [(string, int)]):
+        the binary search tree with the new node inserted.
+        if a duplicate is encountered, the tree will be returned
+        in an identical state. second arg is the path and operations taken to 
+        perform the insertion.
+    """
+    if root == None:
+        path.append((INSERT, value))
+        return (Node(value), path)
+
+    #make no changes if duplicate found
+    if root.get_value() == value:
+        path.append((DUPLICATE, value))
+        return (root, path)
+
+    path.append((SEARCH, root.get_value()))
+
+    if root.get_value() < value:
+        root.right, path = h_insert(root.right, value, path)
+    elif root.get_value() > value:
+        root.left, path = h_insert(root.left, value, path)
+
+    return (root, path)
+
+
 def insert(root, value):
     """
     function to insert a node into a binary search tree.
 
-    returns (Node):
+    parameters:
+        root (Node): the tree to insert into
+        value (int): the value to try and insert into the tree
+        path [(string, int)]: the path and operations taken to perform the
+        insertion
+
+    returns (Node, [(string, int)]):
         the binary search tree with the new node inserted.
         if a duplicate is encountered, the tree will be returned
-        in an identical state.
+        in an identical state. second arg is the path and operations taken to 
+        perform the insertion.
     """
     if root == None:
-        return Node(value)
+        return (Node(value), [(INSERT, value)])
 
-    #make no changes if duplicate found
-    if root.get_value() == value:
-        return root
+    return h_insert(root, value, [])
 
-    if root.get_value() < value:
-        root.right = insert(root.right, value)
-    elif root.get_value() > value:
-        root.left = insert(root.left, value)
 
-    return root
+def h_search(root, value, path):
+    """
+    helper function to search the binary search tree for a specified value
+
+    parameters:
+        root (Node): the tree to search
+        value (int): the value to try and locate in the tree
+        path [(string, int)]: the path and operations taken to perform the
+        insertion
+
+    returns (Node, (string, int)):
+        the node located with that value if found. none if there was no
+        matching node in the binary search tree. second argument is path taken
+        to search for the value.
+    """
+    #value can't be found in the tree
+    if root == None:
+        path.append((NOT_FOUND, value))
+        return (root, path)
+
+    root_value = root.get_value()
+
+    #determine which node to search next
+    if root_value == value:
+        path.append((FIND, value))
+        return (root, path)
+    else:
+        path.append((SEARCH, root_value))
+        if root_value < value:
+            return h_search(root.get_right_child(), value, path)
+        else:
+            return h_search(root.get_left_child(), value, path)
 
 
 def search(root, value):
@@ -113,21 +194,16 @@ def search(root, value):
         root (Node): the tree to search
         value (int): the value to try and locate in the tree
 
-    returns (Node):
+    returns (Node, (string, int)):
         the node located with that value if found. none if there was no
-        matching node in the binary search tree.
+        matching node in the binary search tree. second argument is path taken
+        to search for the value.
     """
     #value can't be found in the tree
     if root == None:
-        return None
+        return (None, [(NOT_FOUND, value)])
 
-    #determine which node to search next
-    if root.get_value() == value:
-        return root
-    elif root.get_value() < value:
-        return search(root.get_right_child(), value)
-    else:
-        return search(root.get_left_child(), value)
+    return h_search(root, value, [])
 
 
 def min_node(root):
@@ -147,6 +223,48 @@ def min_node(root):
     return min_node(root.left)
 
 
+def h_delete(root, value, path):
+    """
+    attempts to delete the node with a specified value in the tree
+
+    parameters:
+        root (Node): the tree to delete from
+        value (int): the value of the node to search for and delete
+        path [(string, int)]: the path and operations taken to perform the
+        insertion
+
+    returns (Node, (string, int)):
+        the tree in an updated state after the deletion of the node.
+        tree will be returned in an identical state if the value
+        requested for deletion does not exist.
+    """
+    #value not found
+    if root == None:
+        path.append((NOT_FOUND, value))
+        return (root, path)
+
+    if root.get_value() < value:
+        path.append((SEARCH, root.get_value()))
+        root.right = h_delete(root.get_right_child(), value, path)
+    elif root.get_value() > value:
+        path.append((SEARCH, root.get_value()))
+        root.left = h_delete(root.get_left_child(), value, path)
+    else:
+        #this is the one to delete
+        if root.no_children():
+            path.append((DELETE, value))
+            root = None
+        elif root.one_child():
+            child = root.one_child()
+            path.append((RESTRUCTURE, (root.get_value(), child.get_value())))
+            root = child
+        else:
+            minimum_node = min_node(root.right)
+            path.append((SWAP, (root.get_value(), minimum_node.get_value())))
+            root.set_value(minimum_node.get_value())
+            h_delete(root.right, minimum_node.get_value(), path)
+    return (root, path)
+
 def delete(root, value):
     """
     attempts to delete the node with a specified value in the tree
@@ -161,24 +279,22 @@ def delete(root, value):
         requested for deletion does not exist.
     """
     if root == None:
-        return None
+        return (root, [(NOT_FOUND, value)])
 
-    if root.get_value() < value:
-        root.right = delete(root.get_right_child(), value)
-    elif root.get_value() > value:
-        root.left = delete(root.get_left_child(), value)
-    else:
-        #this is the one to delete
-        if root.no_children():
-            root = None
-        elif root.one_child():
-            child = root.one_child()
-            root = child
-        else:
-            minimum_node = min_node(root.right)
-            root.set_value(minimum_node.get_value())
-            delete(root.right, minimum_node.get_value())
-    return root
+    return h_delete(root, value, [])
+
+
+root = create(10)
+root, path = insert(root, 15)
+root, path = insert(root, 5)
+root, path = insert(root, 3)
+root, path = insert(root, 7)
+root, path = insert(root, 6)
+root, path = insert(root, 12)
+root, path = insert(root, 11)
+root, path = insert(root, 13)
+root, path = delete(root, 7)
+print(path)
 
 
 def inorder(root):
@@ -296,24 +412,3 @@ def breadth_first(root):
         level += 1
 
     return node_values
-    
-
-root = create(50)
-root = insert(root, 30)
-root = insert(root, 20)
-root = insert(root, 40)
-
-root = insert(root, 70)
-root = insert(root, 60)
-root = insert(root, 80)
-
-print(root.right.value)
-
-#traversals
-print(inorder(root))
-print(preorder(root))
-print(postorder(root))
-
-print(get_height(root))
-
-print(breadth_first(root))
