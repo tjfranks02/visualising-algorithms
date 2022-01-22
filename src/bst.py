@@ -2,6 +2,7 @@
 binary search tree implementation. contains all basic functionality
 required to operate the tree.
 """
+import sys
 from sys import path_hooks
 
 """
@@ -147,9 +148,14 @@ def insert(root, value):
         perform the insertion.
     """
     if root == None:
-        return (Node(value), [(INSERT, value)])
+        return (Node(value), [(INSERT, value)], 1, 0)
 
-    return h_insert(root, value, [])
+    root, path = h_insert(root, value, [])
+
+    height = get_height(root)
+    level = get_level(root, value)
+
+    return (root, path, height, level)
 
 
 def h_search(root, value, path):
@@ -245,10 +251,10 @@ def h_delete(root, value, path):
 
     if root.get_value() < value:
         path.append((SEARCH, root.get_value()))
-        root.right = h_delete(root.get_right_child(), value, path)
+        root.right, path = h_delete(root.get_right_child(), value, path)
     elif root.get_value() > value:
         path.append((SEARCH, root.get_value()))
-        root.left = h_delete(root.get_left_child(), value, path)
+        root.left, path = h_delete(root.get_left_child(), value, path)
     else:
         #this is the one to delete
         if root.no_children():
@@ -264,6 +270,7 @@ def h_delete(root, value, path):
             root.set_value(minimum_node.get_value())
             h_delete(root.right, minimum_node.get_value(), path)
     return (root, path)
+
 
 def delete(root, value):
     """
@@ -281,20 +288,46 @@ def delete(root, value):
     if root == None:
         return (root, [(NOT_FOUND, value)])
 
-    return h_delete(root, value, [])
+    root, path = h_delete(root, value, [])
+    height = get_height(root)
+    level = get_level(root, value)
+
+    return (root, path, height, level)
 
 
-root = create(10)
-root, path = insert(root, 15)
-root, path = insert(root, 5)
-root, path = insert(root, 3)
-root, path = insert(root, 7)
-root, path = insert(root, 6)
-root, path = insert(root, 12)
-root, path = insert(root, 11)
-root, path = insert(root, 13)
-root, path = delete(root, 7)
-print(path)
+def get_level(root, value):
+    """
+    given a value in a bst, returns the integer level where the value is found.
+
+    parameters:
+        root (Node): the bst to search for the value
+        value (int): the level where the value was found in the tree
+    """
+    if root == None:
+        return -sys.maxsize
+    
+    if value < root.value:
+        return 1 + get_level(root.get_left_child(), value)
+    elif value > root.value:
+        return 1 + get_level(root.get_right_child(), value)
+
+    return 0
+
+
+def get_height(root):
+    """
+    function to get the height of a binary search tree.
+
+    parameters:
+        root (Node): the binary search tree to get the height of
+
+    returns (int):
+        the height of the binary tree (leaf node height = 1).
+    """
+    if root == None:
+        return 0
+
+    return max(1 + get_height(root.left), 1 + get_height(root.right))
 
 
 def inorder(root):
@@ -357,22 +390,6 @@ def postorder(root):
     return left_list + right_list + middle_value
 
 
-def get_height(root):
-    """
-    function to get the height of a binary search tree.
-
-    parameters:
-        root (Node): the binary search tree to get the height of
-
-    returns (int):
-        the height of the binary tree (leaf node height = 1).
-    """
-    if root == None:
-        return 0
-
-    return max(1 + get_height(root.left), 1 + get_height(root.right))
-
-
 def level_values(root, level):
     """
     function to get the value of every node at the requested level.
@@ -412,3 +429,8 @@ def breadth_first(root):
         level += 1
 
     return node_values
+
+
+"""root, path, a, b = insert(None, 12)
+root, path, a, b = insert(root, 10)
+root, path, a, b = insert(root, 9)"""
