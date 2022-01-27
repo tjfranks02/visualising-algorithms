@@ -8,9 +8,15 @@ configuration for gui elements
 """
 GRAPH_DIMENSIONS = (500, 500)
 GRAPH_DIMENSION = 500
-NODE_RADIUS = 20
-ROOT_COORDS = (int(GRAPH_DIMENSION / 2), GRAPH_DIMENSION - 50)
-NODE_Y_GAP = 50
+NODE_RADIUS = 19
+GRAPH_BORDER = 50
+GRAPH_DRAWABLE_DIMENSIONS = (GRAPH_DIMENSION - 2 * GRAPH_BORDER, 
+    GRAPH_DIMENSION - 2 * GRAPH_BORDER)
+ROOT_COORDS = (((GRAPH_DIMENSION - 2 * GRAPH_BORDER) / 2) + GRAPH_BORDER, 
+    GRAPH_DIMENSION - GRAPH_BORDER)
+
+HEIGHT_LIMIT = 5
+NODE_Y_GAP = GRAPH_DRAWABLE_DIMENSIONS[0] / (HEIGHT_LIMIT - 1)
 
 BACKGROUND_COLOUR = "snow"
 TEXT_COLOUR = "snow"
@@ -238,7 +244,7 @@ class BSTView:
             #redraw figures with default colour
             coords = node.get_coords()
             node_id = self.graph.draw_circle(coords,
-                fill_color=NEUTRAL_COLOUR, radius=20)
+                fill_color=NEUTRAL_COLOUR, radius=node.radius)
             
             text_id = self.graph.draw_text(node_value, coords, 
                 color=TEXT_COLOUR)
@@ -293,7 +299,7 @@ class BSTView:
         coords = search_node.get_coords()
 
         node_id = self.graph.draw_circle(coords,
-            fill_color=VISITED_COLOUR, radius=20)
+            fill_color=VISITED_COLOUR, radius=search_node.radius)
         text_id = self.graph.draw_text(search_val, coords, color=TEXT_COLOUR)
         self.tree_vals[search_val] = BSTNode(node_id, text_id, 
             x_coord=coords[0], y_coord=coords[1])
@@ -315,19 +321,22 @@ class BSTView:
         """
         prev_val = None
         new_val = new_instruction[1]
+        x_offset = GRAPH_DRAWABLE_DIMENSIONS[0] / (2 * (2 ** level))
 
         #the tree is not empty
         if prev_instruction != None:
             new_x = 0
             new_y = 0
-            x_offset = ROOT_COORDS[0] / (2 ** level)
 
             prev_val = prev_instruction[1]
             prev_node = self.tree_vals[prev_val]
 
+            print("----------------------------------------")
+            print("drawable dimensions:", GRAPH_DRAWABLE_DIMENSIONS)
             print("level:", level)
             print("offset:", x_offset)
             print("old coords:", prev_node.get_coords())
+            print("y gap:", NODE_Y_GAP)
 
             if prev_val > new_val:
                 new_x = prev_node.x_coord - x_offset
@@ -344,10 +353,12 @@ class BSTView:
             new_y = ROOT_COORDS[1]
 
         #draw necessary shapes on graph
-        self.draw_node(new_x, new_y, new_val, prev_val, NEW_INSERT_COLOUR)
+        self.draw_node(new_x, new_y, new_val, prev_val, 
+            NEW_INSERT_COLOUR, x_offset)
 
 
-    def draw_node(self, x_coord, y_coord, new_val, connecting_val, node_colour):
+    def draw_node(self, x_coord, y_coord, new_val, connecting_val, 
+        node_colour, x_space):
         """
         when a node insertion is triggered, this function will draw the shapes
         upon the graph element.
@@ -360,17 +371,17 @@ class BSTView:
         """
         connecting_node = self.tree_vals.get(connecting_val)
 
+        radius = min(NODE_RADIUS, x_space)
+
         node_id = self.graph.draw_circle((x_coord, y_coord),
-            fill_color=node_colour, radius=20)
+            fill_color=node_colour, radius=radius)
         text_id = self.graph.draw_text(new_val, (x_coord, y_coord), 
             color=TEXT_COLOUR)
         self.tree_vals[new_val] = BSTNode(node_id, text_id, x_coord=x_coord, 
-                y_coord=y_coord)
+                y_coord=y_coord, radius=radius)
         self.redraw.append(new_val)
 
         #if a line is required to be drawn between nodes
-        line_id = None
-
         if connecting_val != None:
             up_coords = connecting_node.get_btm_lft_coords()
             down_coords = self.tree_vals[new_val].get_top_coords()
@@ -378,9 +389,15 @@ class BSTView:
             if connecting_val < new_val:
                 up_coords = connecting_node.get_btm_rgt_coords()
 
-            line_id = self.graph.draw_line(down_coords, up_coords)
+            self.graph.draw_line(down_coords, up_coords)
 
-        
+
+
+
+
+
+
+
 """
 INITIALISATION CODE FOR WINDOW AND GUI
 """
@@ -407,6 +424,17 @@ layout = input_layout + [graphing_layout]
 
 # Create the Window
 window = sg.Window('Binary Search Tree', layout, finalize=True)
+graph = window[BST_GRAPH]
+graph.draw_line((0, 50), (500, 50))
+graph.draw_line((0, 450), (500, 450))
+graph.draw_line((50, 0), (50, 500))
+graph.draw_line((450, 0), (450, 500))
+
+y_value = NODE_Y_GAP
+
+for num in range(0, HEIGHT_LIMIT + 1):
+    graph.draw_line((0, 50 + num * y_value), (500, 50 + num * y_value))
+    print(50 + num * y_value)
 
 controller = BSTController(window)
 controller.main_loop()
