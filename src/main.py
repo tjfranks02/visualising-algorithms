@@ -10,6 +10,7 @@ GRAPH_DIMENSIONS = (500, 500)
 GRAPH_DIMENSION = 500
 NODE_RADIUS = 20
 ROOT_COORDS = (int(GRAPH_DIMENSION / 2), GRAPH_DIMENSION - 50)
+NODE_Y_GAP = 50
 
 BACKGROUND_COLOUR = "snow"
 TEXT_COLOUR = "snow"
@@ -96,6 +97,7 @@ class BSTController:
         prev_instruction = None
         animating = False
         tree_height = -1
+        current_node_level = 0
 
         while True:
             #await events on the window
@@ -113,7 +115,7 @@ class BSTController:
                     continue
 
                 self.view.animate_path(prev_instruction, instruction_queue[0], 
-                    tree_height, 0)
+                    tree_height, current_node_level)
                 prev_instruction = instruction_queue.pop(0)
 
             #a tree method has been requested
@@ -126,6 +128,7 @@ class BSTController:
                     self.tree_model, path, height, level = bst.insert(
                         self.tree_model, int(value))
                     instruction_queue = path
+                    current_node_level = level
                     print(instruction_queue)
                     animating = True
                     
@@ -153,6 +156,7 @@ class BSTNode:
         self.x_coord = x_coord
         self.y_coord = y_coord
         self.radius = radius
+        self.level = 0
 
     """
     getters and setters
@@ -192,6 +196,12 @@ class BSTNode:
     def set_coords(self, coords):
         self.x_coord = coords[0]
         self.y_coord = coords[1]
+
+    def set_level(self, level):
+        self.level = level
+
+    def get_level(self):
+        return self.level
 
 
 class BSTView:
@@ -306,23 +316,27 @@ class BSTView:
         prev_val = None
         new_val = new_instruction[1]
 
-        print("previous instruction:", prev_instruction)
-        print("current instruction:", new_instruction)
-
         #the tree is not empty
         if prev_instruction != None:
             new_x = 0
             new_y = 0
-            
+            x_offset = ROOT_COORDS[0] / (2 ** level)
+
             prev_val = prev_instruction[1]
             prev_node = self.tree_vals[prev_val]
 
+            print("level:", level)
+            print("offset:", x_offset)
+            print("old coords:", prev_node.get_coords())
+
             if prev_val > new_val:
-                new_x = prev_node.x_coord - 50
-                new_y = prev_node.y_coord - 50
+                new_x = prev_node.x_coord - x_offset
+                new_y = prev_node.y_coord - NODE_Y_GAP
             else:
-                new_x = prev_node.x_coord + 50
-                new_y = prev_node.y_coord - 50
+                new_x = prev_node.x_coord + x_offset
+                new_y = prev_node.y_coord - NODE_Y_GAP
+
+            print("new coords:", (new_x, new_y))
         
         #tree empty, add root element
         else:
@@ -354,15 +368,12 @@ class BSTView:
                 y_coord=y_coord)
         self.redraw.append(new_val)
 
-        #if a line is required to be drawn
+        #if a line is required to be drawn between nodes
         line_id = None
 
         if connecting_val != None:
             up_coords = connecting_node.get_btm_lft_coords()
             down_coords = self.tree_vals[new_val].get_top_coords()
-
-            print("connection to top:", up_coords)
-            print("connection to node:", down_coords)
 
             if connecting_val < new_val:
                 up_coords = connecting_node.get_btm_rgt_coords()
