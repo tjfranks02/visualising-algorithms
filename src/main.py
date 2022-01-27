@@ -117,7 +117,7 @@ class BSTController:
                 prev_instruction = instruction_queue.pop(0)
 
             #a tree method has been requested
-            if event == BST_TREE_ACTION:
+            if event == BST_TREE_ACTION and not animating:
                 
                 value = values[BST_ACTION_VAL]
                 method = values[BST_METHOD]
