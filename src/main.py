@@ -23,7 +23,10 @@ TEXT_COLOUR = "snow"
 NEUTRAL_COLOUR = "lime green"
 VISITED_COLOUR = "firebrick2"
 NEW_INSERT_COLOUR = "purple4"
+FOUND_NODE_COLOUR = "blue"
 THEME = "DarkBlue"
+NODE_SWAP_COLOUR = "goldenrod2"
+NODE_DUP_COLOUR = "midnight blue"
 
 """
 identifiers for our gui elements. will also be the name of events that happen
@@ -127,23 +130,17 @@ class BSTController:
             #a tree method has been requested
             if event == BST_TREE_ACTION and not animating:
                 
+                animating = True
                 value = values[BST_ACTION_VAL]
                 method = values[BST_METHOD]
 
                 if method == BST_INSERT:
-                    self.tree_model, path, height, level = bst.insert(
-                        self.tree_model, int(value))
-                    instruction_queue = path
-                    current_node_level = level
-                    animating = True
-                    
-          
-    def remove_items(self, items):
-        """
-        """
-        for item in items:
-            self.graph.delete_figure(item)
-
+                    self.tree_model, instruction_queue, height, \
+                        current_node_level = bst.insert(self.tree_model, 
+                        int(value))
+                elif method == BST_SEARCH:
+                    self.tree_model, instruction_queue = \
+                        bst.search(self.tree_model, int(value))
 
 
 class BSTNode:
@@ -151,13 +148,19 @@ class BSTNode:
     a class describing a node positioned on the graph element. includes
     coordinates as well as lines connecting nodes.
     """
-    def __init__(self, node_id, text_id, top_line=None, btm_lft_line=None, 
-            btm_rgt_line=None, x_coord=None, y_coord=None, radius=NODE_RADIUS):
+    def __init__(self, node_id, text_id, x_coord=None, 
+            y_coord=None, radius=NODE_RADIUS):
+        """
+        parameters:
+            node_id (int): the pysimplegui id returned from calling 
+                create_circle.
+            text_id (int): the pysimplegui id returned from calling create_text
+            x_coord, y_coord (int): coordinates for the center of this node on 
+                the graph.
+            radius (int): the radius of this node on the graph.
+        """
         self.node_id = node_id
         self.text_id = text_id
-        self.top_line = top_line
-        self.btm_lft_line = btm_lft_line
-        self.btm_rgt_line = btm_rgt_line
         self.x_coord = x_coord
         self.y_coord = y_coord
         self.radius = radius
@@ -168,8 +171,9 @@ class BSTNode:
     """
     def get_btm_rgt_coords(self):
         """
-        calculate the coordinates on the bottom right of the node where a line 
-        should be connected.
+        returns (int, int):
+            the coordinates where a line should be connected on the bottom right 
+            of this node.
         """
         x_coord = self.x_coord + (self.radius / 2)
         y_coord = -math.sqrt((self.radius ** 2) - 
@@ -178,8 +182,9 @@ class BSTNode:
 
     def get_btm_lft_coords(self):
         """
-        calculate the coordinates on the bottom left of the node where a line 
-        should be connected.
+        returns (int, int):
+            the coordinates where a line should be connected on the bottom left 
+            of this node.
         """
         x_coord = self.x_coord - (self.radius / 2)
         y_coord = -math.sqrt((self.radius ** 2) -
@@ -188,8 +193,9 @@ class BSTNode:
 
     def get_top_coords(self):
         """
-        calculate the coordinates on the top of the node where a line should be
-        connected.
+        returns (int, int):
+            the coordinates where a line should be connected on the top of this 
+            node.
         """
         x_coord = self.x_coord
         y_coord = self.y_coord + self.radius
@@ -215,7 +221,6 @@ class BSTView:
     element and performing various animations to display the process of
     performing various actions on the tree.
     """
-
     def __init__(self, graph):
         """
         initialise the view of the BST
@@ -229,7 +234,8 @@ class BSTView:
 
     def redraw_nodes(self):
         """
-        redraws nodes that have been highlighted in the default colour.
+        redraws the nodes that have been involved in an animation. the list of
+        nodes is stored in self.redraw.
         """
         for node_value in self.redraw:
             node = self.tree_vals[node_value]
@@ -253,52 +259,82 @@ class BSTView:
 
     def animate_path(self, previous, current, height, level):
         """
-        takes a path returned from a bst and animate the process, displaying it
-        on the graph.
+        takes an instruction generated during a bst operation and animates it
+        for the user's benefit.
 
-        FIND = "FIND"
-        SEARCH = "SEARCH"
-        SWAP = "SWAP"
-        INSERT = "INSERT"
-        NOT_FOUND = "NOT_FOUND"
-        DUPLICATE = "DUPLICATE"
-        DELETE = "DELETE"
-        RESTRUCTURE = "RESTRUCTURE"
+        parameters:
+            previous (string, int): the previous instruction executed
+            current (string, int): the new instruction to execute
+            height (int): the height of the tree
+            level (int): the level at which the node being acted upon is located
+                in the NEW representation of the tree. e.g. if searching, what
+                level of the tree was the node found at.
         """
         instruction = current[0]
 
         if instruction == FIND:
-            pass
+            self.animate_access(current, FOUND_NODE_COLOUR)
         elif instruction == SEARCH:
-            self.animate_search(current)
+            self.animate_access(current, VISITED_COLOUR)
         elif instruction == SWAP:
-            pass
+            self.animate_swap(current)
         elif instruction == INSERT:
             self.animate_insert(previous, current, height, level)
         elif instruction == NOT_FOUND:
             pass
         elif instruction == DUPLICATE:
-            pass
+            self.animate_access(current, NODE_DUP_COLOUR)
         elif instruction == DELETE:
             pass
         elif instruction == RESTRUCTURE:
             pass
-    
 
-    def animate_search(self, new_instruction):
+    def animate_swap(self, new_instruction):
         """
-        function to display an animation of searching a node on the tree.
+        when deleting, node values sometimes need to be swapped. this function 
+        animates that process.
+
+        parameters:
+            new_instruction (string, (int, int)): the new instruction to
+                process. the string is simply the name of the instruction and
+                the two ints are the values to swap on the tree.
+        """
+        swap_vals = new_instruction[1]
+        node1 = self.tree_vals[swap_vals[0]]
+        node2 = self.tree_vals[swap_vals[1]]
+
+        node1_coords = node1.get_coords()
+        node2_coords = node2.get_coords()
+
+        self.draw_node(node1_coords[0], node1_coords[1], node2.value, 
+            None, NODE_SWAP_COLOUR, 2 * node1.radius)
+        self.draw_node(node2_coords[0], node2_coords[1], node1.value, 
+            None, NODE_SWAP_COLOUR, 2 * node2.radius)
+
+        self.redraw.append(swap_vals[0])
+        self.redraw.append(swap_vals[1])
+
+        self.tree_vals[swap_vals[0]] = node2
+        self.tree_vals[swap_vals[1]] = node1
+
+    def animate_access(self, new_instruction, colour):
+        """
+        function to display an animation of accessing a node on the tree. 
 
         parameters:
             new_instruction ((string, int)): the current instruction to be 
                 executed. int is the value to search for.
+            colour (string): the node could be part of a search path or could be
+                the value being searched for. each has a different colour.
         """
         search_val = new_instruction[1]
         search_node = self.tree_vals[search_val]
         coords = search_node.get_coords()
 
+        x_space = GRAPH_DRAWABLE_DIMENSIONS[0] / (2 * (2 ** search_node.level))
+
         self.draw_node(coords[0], coords[1], search_val, None, 
-            VISITED_COLOUR, search_node.radius)
+            colour, x_space)
 
 
     def animate_insert(self, prev_instruction, new_instruction, height, level):
@@ -341,6 +377,7 @@ class BSTView:
         #draw necessary shapes on graph
         self.draw_node(new_x, new_y, new_val, prev_val, 
             NEW_INSERT_COLOUR, x_offset)
+        self.tree_vals[new_val].level = level
 
 
     def draw_node(self, x_coord, y_coord, new_val, connecting_val, 
@@ -354,6 +391,12 @@ class BSTView:
             new_val (string): the new value to insert into the node
             connecting_val (string): the value of the node connected to the
                 newly inserted node
+            node_colour (string): bst nodes can have one of many colours to 
+                represent their current state. this is where the 
+                colour is specified
+            x_space (int): the space along the x-axis that is available to the
+                node for drawing. node may need resizing to fit the available
+                space.
         """
         connecting_node = self.tree_vals.get(connecting_val)
 

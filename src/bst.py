@@ -168,7 +168,7 @@ def h_search(root, value, path):
         path [(string, int)]: the path and operations taken to perform the
         insertion
 
-    returns (Node, (string, int)):
+    returns ((string, int)...):
         the node located with that value if found. none if there was no
         matching node in the binary search tree. second argument is path taken
         to search for the value.
@@ -176,14 +176,14 @@ def h_search(root, value, path):
     #value can't be found in the tree
     if root == None:
         path.append((NOT_FOUND, value))
-        return (root, path)
+        return path
 
     root_value = root.get_value()
 
     #determine which node to search next
     if root_value == value:
         path.append((FIND, value))
-        return (root, path)
+        return path
     else:
         path.append((SEARCH, root_value))
         if root_value < value:
@@ -209,7 +209,7 @@ def search(root, value):
     if root == None:
         return (None, [(NOT_FOUND, value)])
 
-    return h_search(root, value, [])
+    return (root, h_search(root, value, []))
 
 
 def min_node(root):
@@ -429,8 +429,3 @@ def breadth_first(root):
         level += 1
 
     return node_values
-
-
-"""root, path, a, b = insert(None, 12)
-root, path, a, b = insert(root, 10)
-root, path, a, b = insert(root, 9)"""
