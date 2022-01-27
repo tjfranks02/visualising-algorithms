@@ -135,7 +135,6 @@ class BSTController:
                         self.tree_model, int(value))
                     instruction_queue = path
                     current_node_level = level
-                    print(instruction_queue)
                     animating = True
                     
           
@@ -236,7 +235,7 @@ class BSTView:
             node = self.tree_vals[node_value]
             node_id = node.node_id
             text_id = node.text_id
-            
+
             #delete the old figures
             self.graph.delete_figure(node_id)
             self.graph.delete_figure(text_id)
@@ -298,12 +297,8 @@ class BSTView:
         search_node = self.tree_vals[search_val]
         coords = search_node.get_coords()
 
-        node_id = self.graph.draw_circle(coords,
-            fill_color=VISITED_COLOUR, radius=search_node.radius)
-        text_id = self.graph.draw_text(search_val, coords, color=TEXT_COLOUR)
-        self.tree_vals[search_val] = BSTNode(node_id, text_id, 
-            x_coord=coords[0], y_coord=coords[1])
-        self.redraw.append(search_val)
+        self.draw_node(coords[0], coords[1], search_val, None, 
+            VISITED_COLOUR, search_node.radius)
 
 
     def animate_insert(self, prev_instruction, new_instruction, height, level):
@@ -331,21 +326,12 @@ class BSTView:
             prev_val = prev_instruction[1]
             prev_node = self.tree_vals[prev_val]
 
-            print("----------------------------------------")
-            print("drawable dimensions:", GRAPH_DRAWABLE_DIMENSIONS)
-            print("level:", level)
-            print("offset:", x_offset)
-            print("old coords:", prev_node.get_coords())
-            print("y gap:", NODE_Y_GAP)
-
             if prev_val > new_val:
                 new_x = prev_node.x_coord - x_offset
                 new_y = prev_node.y_coord - NODE_Y_GAP
             else:
                 new_x = prev_node.x_coord + x_offset
                 new_y = prev_node.y_coord - NODE_Y_GAP
-
-            print("new coords:", (new_x, new_y))
         
         #tree empty, add root element
         else:
@@ -434,7 +420,6 @@ y_value = NODE_Y_GAP
 
 for num in range(0, HEIGHT_LIMIT + 1):
     graph.draw_line((0, 50 + num * y_value), (500, 50 + num * y_value))
-    print(50 + num * y_value)
 
 controller = BSTController(window)
 controller.main_loop()
