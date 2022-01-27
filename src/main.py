@@ -1,5 +1,5 @@
 import PySimpleGUI as sg
-import time
+import math
 
 import bst
 
@@ -8,8 +8,15 @@ configuration for gui elements
 """
 GRAPH_DIMENSIONS = (500, 500)
 GRAPH_DIMENSION = 500
-CIRCLE_RADIUS = int(GRAPH_DIMENSION * 0.1)
-ROOT_COORDS = (int(GRAPH_DIMENSION / 2), GRAPH_DIMENSION - CIRCLE_RADIUS)
+NODE_RADIUS = 20
+ROOT_COORDS = (int(GRAPH_DIMENSION / 2), GRAPH_DIMENSION - 50)
+
+BACKGROUND_COLOUR = "snow"
+TEXT_COLOUR = "snow"
+NEUTRAL_COLOUR = "lime green"
+VISITED_COLOUR = "firebrick2"
+NEW_INSERT_COLOUR = "purple4"
+THEME = "DarkBlue"
 
 """
 identifiers for our gui elements. will also be the name of events that happen
@@ -122,8 +129,6 @@ class BSTController:
                     print(instruction_queue)
                     animating = True
                     
-            
-
           
     def remove_items(self, items):
         """
@@ -139,7 +144,7 @@ class BSTNode:
     coordinates as well as lines connecting nodes.
     """
     def __init__(self, node_id, text_id, top_line=None, btm_lft_line=None, 
-            btm_rgt_line=None, x_coord=None, y_coord=None):
+            btm_rgt_line=None, x_coord=None, y_coord=None, radius=NODE_RADIUS):
         self.node_id = node_id
         self.text_id = text_id
         self.top_line = top_line
@@ -147,6 +152,39 @@ class BSTNode:
         self.btm_rgt_line = btm_rgt_line
         self.x_coord = x_coord
         self.y_coord = y_coord
+        self.radius = radius
+
+    """
+    getters and setters
+    """
+    def get_btm_rgt_coords(self):
+        """
+        calculate the coordinates on the bottom right of the node where a line 
+        should be connected.
+        """
+        x_coord = self.x_coord + (self.radius / 2)
+        y_coord = -math.sqrt((self.radius ** 2) - 
+            (x_coord - self.x_coord) ** 2) + self.y_coord
+        return (x_coord, y_coord)
+
+    def get_btm_lft_coords(self):
+        """
+        calculate the coordinates on the bottom left of the node where a line 
+        should be connected.
+        """
+        x_coord = self.x_coord - (self.radius / 2)
+        y_coord = -math.sqrt((self.radius ** 2) -
+            (x_coord - self.x_coord) ** 2) + self.y_coord
+        return (x_coord, y_coord)
+
+    def get_top_coords(self):
+        """
+        calculate the coordinates on the top of the node where a line should be
+        connected.
+        """
+        x_coord = self.x_coord
+        y_coord = self.y_coord + self.radius
+        return (x_coord, y_coord)
 
     def get_coords(self):
         return (self.x_coord, self.y_coord)
@@ -154,6 +192,7 @@ class BSTNode:
     def set_coords(self, coords):
         self.x_coord = coords[0]
         self.y_coord = coords[1]
+
 
 class BSTView:
     """
@@ -189,9 +228,10 @@ class BSTView:
             #redraw figures with default colour
             coords = node.get_coords()
             node_id = self.graph.draw_circle(coords,
-                fill_color="yellow", radius=20)
+                fill_color=NEUTRAL_COLOUR, radius=20)
             
-            text_id = self.graph.draw_text(node_value, coords)
+            text_id = self.graph.draw_text(node_value, coords, 
+                color=TEXT_COLOUR)
 
             self.redraw = []
         
@@ -210,17 +250,12 @@ class BSTView:
         DELETE = "DELETE"
         RESTRUCTURE = "RESTRUCTURE"
         """
-        prev_instruction = None
-
-        if previous != None:
-            prev_instruction = previous[0]
-
         instruction = current[0]
 
         if instruction == FIND:
             pass
         elif instruction == SEARCH:
-            pass
+            self.animate_search(current)
         elif instruction == SWAP:
             pass
         elif instruction == INSERT:
@@ -233,17 +268,38 @@ class BSTView:
             pass
         elif instruction == RESTRUCTURE:
             pass
-        
-        prev_instruction = instruction
+    
+
+    def animate_search(self, new_instruction):
+        """
+        function to display an animation of searching a node on the tree.
+
+        parameters:
+            new_instruction ((string, int)): the current instruction to be 
+                executed. int is the value to search for.
+        """
+        search_val = new_instruction[1]
+        search_node = self.tree_vals[search_val]
+        coords = search_node.get_coords()
+
+        node_id = self.graph.draw_circle(coords,
+            fill_color=VISITED_COLOUR, radius=20)
+        text_id = self.graph.draw_text(search_val, coords, color=TEXT_COLOUR)
+        self.tree_vals[search_val] = BSTNode(node_id, text_id, 
+            x_coord=coords[0], y_coord=coords[1])
+        self.redraw.append(search_val)
 
 
     def animate_insert(self, prev_instruction, new_instruction, height, level):
         """
-        function to display an animation of displaying an insertion of a node.
+        function to animate the insertion of a node on the tree.
 
         parameters:
-            prev_instruction ((string, int)):
-            new_instruction ((string, int)):
+            prev_instruction ((string, int)): the previous instruction executed 
+                int part is relevant for this function, representing the node 
+                value acted upon in the previous instruction.
+            new_instruction ((string, int)): the current instruction to be 
+                executed. int is the value to insert. 
             height (int): the height of the tree after the insertion
             level (int): the level that the new node is located at
         """
@@ -255,11 +311,11 @@ class BSTView:
 
         #the tree is not empty
         if prev_instruction != None:
-            prev_val = prev_instruction[1]
-            prev_node = self.tree_vals[prev_val]
-
             new_x = 0
             new_y = 0
+            
+            prev_val = prev_instruction[1]
+            prev_node = self.tree_vals[prev_val]
 
             if prev_val > new_val:
                 new_x = prev_node.x_coord - 50
@@ -274,20 +330,50 @@ class BSTView:
             new_y = ROOT_COORDS[1]
 
         #draw necessary shapes on graph
-        node_id = self.graph.draw_circle((new_x, new_y),
-            fill_color="green", radius=20)
-        text_id = self.graph.draw_text(new_val, (new_x, new_y))
-        self.tree_vals[new_val] = BSTNode(node_id, text_id, x_coord=new_x, 
-                y_coord=new_y)
+        self.draw_node(new_x, new_y, new_val, prev_val, NEW_INSERT_COLOUR)
+
+
+    def draw_node(self, x_coord, y_coord, new_val, connecting_val, node_colour):
+        """
+        when a node insertion is triggered, this function will draw the shapes
+        upon the graph element.
+
+        parameters:
+            x_coord, y_coord (int): x and y coords
+            new_val (string): the new value to insert into the node
+            connecting_val (string): the value of the node connected to the
+                newly inserted node
+        """
+        connecting_node = self.tree_vals.get(connecting_val)
+
+        node_id = self.graph.draw_circle((x_coord, y_coord),
+            fill_color=node_colour, radius=20)
+        text_id = self.graph.draw_text(new_val, (x_coord, y_coord), 
+            color=TEXT_COLOUR)
+        self.tree_vals[new_val] = BSTNode(node_id, text_id, x_coord=x_coord, 
+                y_coord=y_coord)
         self.redraw.append(new_val)
 
-        print(new_x, new_y)
+        #if a line is required to be drawn
+        line_id = None
+
+        if connecting_val != None:
+            up_coords = connecting_node.get_btm_lft_coords()
+            down_coords = self.tree_vals[new_val].get_top_coords()
+
+            print("connection to top:", up_coords)
+            print("connection to node:", down_coords)
+
+            if connecting_val < new_val:
+                up_coords = connecting_node.get_btm_rgt_coords()
+
+            line_id = self.graph.draw_line(down_coords, up_coords)
 
         
 """
 INITIALISATION CODE FOR WINDOW AND GUI
 """
-sg.theme('DarkAmber')   # Add a little color to your windows
+sg.theme(THEME)   # Add a little color to your windows
 # All the stuff inside your window. This is the PSG magic code compactor...
 
 input_layout = [
@@ -300,7 +386,7 @@ input_layout = [
 graphing_layout = [
     sg.Graph(
         GRAPH_DIMENSIONS, (0,0), GRAPH_DIMENSIONS,
-        background_color="red", 
+        background_color=BACKGROUND_COLOUR, 
         key=BST_GRAPH, 
         enable_events=True 
     )
