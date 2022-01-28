@@ -263,14 +263,15 @@ def h_delete(root, value, path):
             root = None
         elif root.one_child():
             child = root.one_child()
-            path.append((RESTRUCTURE, (root.get_value(), child.get_value())))
+            path.append((DELETE, root.get_value()))
             root = child
         else:
             minimum_node = min_node(root.right)
-            path.append((SWAP, (root.get_value(), minimum_node.get_value())))
+            root_value = root.get_value()
+            path.append((SWAP, (root_value, minimum_node.get_value())))
             root.set_value(minimum_node.get_value())
-            root.right, path = h_delete(root.right, minimum_node.get_value(), 
-                path)
+            minimum_node.set_value(root_value)
+            root.right, path = h_delete(root.right, root_value, path)
     return (root, path)
 
 

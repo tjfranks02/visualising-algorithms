@@ -2,6 +2,10 @@ import PySimpleGUI as sg
 import math
 import time
 
+"""
+implementation of binary search tree that also returns the actions taken to
+perform a certain action.
+"""
 import bst
 
 """
@@ -29,6 +33,12 @@ DELETE_NODE_COLOUR = "purple"
 THEME = "DarkBlue"
 NODE_SWAP_COLOUR = "goldenrod2"
 NODE_DUP_COLOUR = "midnight blue"
+
+"""
+error messages
+"""
+NOT_FOUND_MESSAGE = "Value not found in tree"
+DUPLICATE_MESSAGE = "Value already exists in tree"
 
 """
 identifiers for our gui elements. will also be the name of events that happen
@@ -302,6 +312,8 @@ class BSTView:
         previous = None
         current = None
 
+        print(path)
+
         while len(path) > 0:
             
             current = path[0]
@@ -338,13 +350,26 @@ class BSTView:
         elif instruction == INSERT:
             self.animate_insert(previous, current, height, level)
         elif instruction == NOT_FOUND:
-            pass
+            self.display_error_string(NOT_FOUND_MESSAGE)
         elif instruction == DUPLICATE:
+            self.display_error_string(DUPLICATE_MESSAGE)
             self.animate_access(current, NODE_DUP_COLOUR)
         elif instruction == DELETE:
             self.animate_delete(current)
         elif instruction == RESTRUCTURE:
-            pass
+            self.animate_swap(current)
+
+
+    def display_error_string(self, display_string):
+        """
+        when there is some kind of issue with animating a particular action,
+        this function will print out an explanatory error message to the graph.
+
+        parameters:
+            display_string (string): the error message to display to the user.
+        """
+        self.graph.draw_text(display_string, 
+            (3 * GRAPH_BORDER, GRAPH_DIMENSION - GRAPH_BORDER))
 
 
     def animate_delete(self, new_instruction):
@@ -526,16 +551,16 @@ layout = input_layout + [graphing_layout]
 
 # Create the Window
 window = sg.Window('Binary Search Tree', layout, finalize=True)
-graph = window[BST_GRAPH]
-graph.draw_line((0, 50), (500, 50))
-graph.draw_line((0, 450), (500, 450))
-graph.draw_line((50, 0), (50, 500))
-graph.draw_line((450, 0), (450, 500))
+# graph = window[BST_GRAPH]
+# graph.draw_line((0, 50), (500, 50))
+# graph.draw_line((0, 450), (500, 450))
+# graph.draw_line((50, 0), (50, 500))
+# graph.draw_line((450, 0), (450, 500))
 
-y_value = NODE_Y_GAP
+# y_value = NODE_Y_GAP
 
-for num in range(0, HEIGHT_LIMIT + 1):
-    graph.draw_line((0, 50 + num * y_value), (500, 50 + num * y_value))
+# for num in range(0, HEIGHT_LIMIT + 1):
+#     graph.draw_line((0, 50 + num * y_value), (500, 50 + num * y_value))
 
 controller = BSTController(window)
 controller.main_loop()
