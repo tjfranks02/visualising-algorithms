@@ -18,6 +18,7 @@ DUPLICATE = "DUPLICATE"
 DELETE = "DELETE"
 RESTRUCTURE = "RESTRUCTURE"
 
+
 class Node:
     """
     class representing a node in a binary tree structure.
@@ -268,7 +269,8 @@ def h_delete(root, value, path):
             minimum_node = min_node(root.right)
             path.append((SWAP, (root.get_value(), minimum_node.get_value())))
             root.set_value(minimum_node.get_value())
-            h_delete(root.right, minimum_node.get_value(), path)
+            root.right, path = h_delete(root.right, minimum_node.get_value(), 
+                path)
     return (root, path)
 
 
@@ -290,7 +292,7 @@ def delete(root, value):
 
     root, path = h_delete(root, value, [])
     height = get_height(root)
-    level = get_level(root, value)
+    level = get_level(root, value) 
 
     return (root, path, height, level)
 

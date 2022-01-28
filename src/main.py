@@ -25,6 +25,7 @@ NEUTRAL_COLOUR = "lime green"
 VISITED_COLOUR = "firebrick2"
 NEW_INSERT_COLOUR = "purple4"
 FOUND_NODE_COLOUR = "blue"
+DELETE_NODE_COLOUR = "purple"
 THEME = "DarkBlue"
 NODE_SWAP_COLOUR = "goldenrod2"
 NODE_DUP_COLOUR = "midnight blue"
@@ -76,6 +77,7 @@ class BSTController:
         self.view = BSTView(window[BST_GRAPH], window) #class handling tree display
         self.tree_model = None
 
+
     def main_loop(self):
         """
         the main loop processing input from window and displaying tree.
@@ -111,7 +113,9 @@ class BSTController:
                         int(value))
 
                 self.view.animation_loop(instruction_queue, tree_height, 
-                    current_node_level)
+                    current_node_level, self.tree_model)
+
+
 
 
 class BSTNode:
@@ -120,7 +124,7 @@ class BSTNode:
     coordinates as well as lines connecting nodes.
     """
     def __init__(self, node_id, text_id, level, x_coord, 
-            y_coord, radius):
+            y_coord, radius, value):
         """
         parameters:
             node_id (int): the pysimplegui id returned from calling 
@@ -136,6 +140,8 @@ class BSTNode:
         self.y_coord = y_coord
         self.radius = radius
         self.level = level
+        self.value = value
+
 
     """
     getters and setters
@@ -151,6 +157,7 @@ class BSTNode:
             (x_coord - self.x_coord) ** 2) + self.y_coord
         return (x_coord, y_coord)
 
+
     def get_btm_lft_coords(self):
         """
         returns (int, int):
@@ -162,6 +169,7 @@ class BSTNode:
             (x_coord - self.x_coord) ** 2) + self.y_coord
         return (x_coord, y_coord)
 
+
     def get_top_coords(self):
         """
         returns (int, int):
@@ -172,18 +180,24 @@ class BSTNode:
         y_coord = self.y_coord + self.radius
         return (x_coord, y_coord)
 
+
     def get_coords(self):
         return (self.x_coord, self.y_coord)
     
+
     def set_coords(self, coords):
         self.x_coord = coords[0]
         self.y_coord = coords[1]
 
+
     def set_level(self, level):
         self.level = level
 
+
     def get_level(self):
         return self.level
+
+
 
 
 class BSTView:
@@ -202,7 +216,7 @@ class BSTView:
         self.window = window
         self.graph = graph
         self.tree_vals = {}
-        self.redraw = [] #list of nodes queued to redraw
+
 
     def get_x_space(self, level):
         """
@@ -217,36 +231,73 @@ class BSTView:
         """
         return GRAPH_DRAWABLE_DIMENSIONS[0] / (2 * (2 ** level))
 
-    def redraw_nodes(self):
-        """
-        redraws the nodes that have been involved in an animation. the list of
-        nodes is stored in self.redraw.
-        """
-        for node_value in self.redraw:
-            node = self.tree_vals[node_value]
-            node_id = node.node_id
-            text_id = node.text_id
 
-            #delete the old figures
-            self.graph.delete_figure(node_id)
-            self.graph.delete_figure(text_id)
+    def h_redraw_from_model(self, root, parent, level):
+        """
+        a recursive helper function for redraw_from_model.
 
-            #redraw figures with default colour
-            coords = node.get_coords()
-            node_id = self.graph.draw_circle(coords,
-                fill_color=NEUTRAL_COLOUR, radius=node.radius)
+        parameters:
+            root (Node): the bst to draw on the graph
+            parent (Node): the parent node of the current root node
+            level (int): the level that root node is on in the greater tree
+        """
+        #nothing more to draw
+        if root == None:
+            return
+        
+        draw_x = ROOT_COORDS[0]
+        draw_y = ROOT_COORDS[1]
+        x_offset = self.get_x_space(level)
+        parent_value = None
+
+        if parent != None:
+            parent_value = parent.value
+            parent_viewnode = self.tree_vals[parent_value]
+
+            if root.value > parent.value:
+                draw_x = parent_viewnode.x_coord + x_offset
+                draw_y = parent_viewnode.y_coord - NODE_Y_GAP
+            else:
+                draw_x = parent_viewnode.x_coord - x_offset
+                draw_y = parent_viewnode.y_coord - NODE_Y_GAP
+      
+        self.draw_node(draw_x, draw_y, root.value, parent_value, 
+            NEUTRAL_COLOUR, x_offset, level)
+
+        self.h_redraw_from_model(root.left, root, level + 1)
+        self.h_redraw_from_model(root.right, root, level + 1)
             
-            text_id = self.graph.draw_text(node_value, coords, 
-                color=TEXT_COLOUR)
 
-            self.draw_node(coords[0], coords[1], node_value, None, 
-                NEUTRAL_COLOUR, self.get_x_space(node.level), node.level)
+    def redraw_from_model(self, tree_model):
+        """
+        given the underlying model of a bst, erases the current tree from the 
+        graph and redraws it. used after after animation to restore the tree to
+        its most recent state
 
-            self.redraw = []
-    
-    def animation_loop(self, path, height, level):
+        parameters:
+            tree_model (bst.Node): a recursive representation of the bst defined
+            in bst.py
+        """
+        self.graph.erase() #erase all figures from graph
+        self.tree_vals = {}
+
+        if tree_model == None:
+            return
+
+        self.h_redraw_from_model(tree_model, None, 0)
+
+
+    def animation_loop(self, path, height, level, tree_model):
         """
         function to automatically animate a binary search tree operation
+
+        parameters:
+            path ([(string, int)]): the list of instructions to process in the
+                animation.
+            height (int): the height of the tree.
+            level (int): the level of the node that is being acted upon in this
+                animation process.
+            tree_model (Node): recursive representation of the tree.
         """
         previous = None
         current = None
@@ -260,7 +311,8 @@ class BSTView:
 
             previous = path.pop(0)
 
-        self.redraw_nodes()
+        self.redraw_from_model(tree_model)
+
 
     def animate_path(self, previous, current, height, level):
         """
@@ -290,9 +342,29 @@ class BSTView:
         elif instruction == DUPLICATE:
             self.animate_access(current, NODE_DUP_COLOUR)
         elif instruction == DELETE:
-            pass
+            self.animate_delete(current)
         elif instruction == RESTRUCTURE:
             pass
+
+
+    def animate_delete(self, new_instruction):
+        """
+        animate the process of deleting a node from the tree. not really much
+        of an animation but simply involves removing the node from the view
+
+        parameters:
+            new_instruction (string, int): the new instruction to process. the
+            string is the name of the instruction and the int is the value of
+            the node to delete.
+        """
+        delete_value = new_instruction[1]
+        delete_node = self.tree_vals[delete_value]
+        delete_coords = delete_node.get_coords()
+
+        self.draw_node(delete_coords[0], delete_coords[1], delete_value, None, 
+            DELETE_NODE_COLOUR, self.get_x_space(delete_node.level), 
+            delete_node.level)
+
 
     def animate_swap(self, new_instruction):
         """
@@ -316,9 +388,9 @@ class BSTView:
         node2.value = tmp_node1_val
 
         self.draw_node(node1_coords[0], node1_coords[1], node1.value, 
-            None, NODE_SWAP_COLOUR, 2 * node1.radius)
+            None, NODE_SWAP_COLOUR, 2 * node1.radius, node1.level)
         self.draw_node(node2_coords[0], node2_coords[1], node2.value, 
-            None, NODE_SWAP_COLOUR, 2 * node2.radius)
+            None, NODE_SWAP_COLOUR, 2 * node2.radius, node2.level)
 
 
     def animate_access(self, new_instruction, colour):
@@ -410,8 +482,7 @@ class BSTView:
         text_id = self.graph.draw_text(new_val, (x_coord, y_coord), 
             color=TEXT_COLOUR)
         self.tree_vals[new_val] = BSTNode(node_id, text_id, level, 
-            x_coord=x_coord, y_coord=y_coord, radius=radius)
-        self.redraw.append(new_val)
+            x_coord, y_coord, radius, new_val)
 
         #if a line is required to be drawn between nodes
         if connecting_val != None:
