@@ -11,8 +11,8 @@ import bst
 """
 configuration for gui elements
 """
-GRAPH_DIMENSIONS = (500, 500)
 GRAPH_DIMENSION = 500
+GRAPH_DIMENSIONS = (GRAPH_DIMENSION, GRAPH_DIMENSION)
 NODE_RADIUS = 19
 GRAPH_BORDER = 50
 GRAPH_DRAWABLE_DIMENSIONS = (GRAPH_DIMENSION - 2 * GRAPH_BORDER, 
@@ -23,13 +23,16 @@ ROOT_COORDS = (((GRAPH_DIMENSION - 2 * GRAPH_BORDER) / 2) + GRAPH_BORDER,
 HEIGHT_LIMIT = 5
 NODE_Y_GAP = GRAPH_DRAWABLE_DIMENSIONS[0] / (HEIGHT_LIMIT - 1)
 
+"""
+colours for various animations
+"""
 BACKGROUND_COLOUR = "snow"
 TEXT_COLOUR = "snow"
 NEUTRAL_COLOUR = "lime green"
 VISITED_COLOUR = "firebrick2"
 NEW_INSERT_COLOUR = "purple4"
 FOUND_NODE_COLOUR = "blue"
-DELETE_NODE_COLOUR = "purple"
+DELETE_NODE_COLOUR = "purple4"
 THEME = "DarkBlue"
 NODE_SWAP_COLOUR = "goldenrod2"
 NODE_DUP_COLOUR = "midnight blue"
@@ -39,6 +42,7 @@ error messages
 """
 NOT_FOUND_MESSAGE = "Value not found in tree"
 DUPLICATE_MESSAGE = "Value already exists in tree"
+MAX_HEIGHT_MESSAGE = "Tree exceeds maximum height"
 
 """
 identifiers for our gui elements. will also be the name of events that happen
@@ -75,7 +79,6 @@ class BSTController:
     """
     coordinating class enabling communication between view and model for BST.
     """
-
     def __init__(self, window):
         """
         initialise a controller that aids in displaying a BST
@@ -83,9 +86,9 @@ class BSTController:
         parameters:
             window (PSG::Window): the window in which to draw the BST
         """
-        self.window = window
-        self.view = BSTView(window[BST_GRAPH], window) #class handling tree display
-        self.tree_model = None
+        self.window = window 
+        self.view = BSTView(window[BST_GRAPH], window) #tree display
+        self.tree_model = None #underlying search tree data structure
 
 
     def main_loop(self):
@@ -93,9 +96,7 @@ class BSTController:
         the main loop processing input from window and displaying tree.
         """
         instruction_queue = []
-        prev_instruction = None
-        animating = False
-        tree_height = -1
+        tree_height = 0
         current_node_level = 0
 
         while True:
@@ -111,14 +112,14 @@ class BSTController:
                 method = values[BST_METHOD]
 
                 if method == BST_INSERT:
-                    self.tree_model, instruction_queue, height, \
+                    self.tree_model, instruction_queue, tree_height, \
                         current_node_level = bst.insert(self.tree_model, 
                         int(value))
                 elif method == BST_SEARCH:
                     self.tree_model, instruction_queue = \
                         bst.search(self.tree_model, int(value))
                 elif method == BST_DELETE:
-                    self.tree_model, instruction_queue, height, \
+                    self.tree_model, instruction_queue, tree_height, \
                         current_node_level = bst.delete(self.tree_model, 
                         int(value))
 
@@ -140,9 +141,11 @@ class BSTNode:
             node_id (int): the pysimplegui id returned from calling 
                 create_circle.
             text_id (int): the pysimplegui id returned from calling create_text
+            level (int): the level this node is located at in the tree.
             x_coord, y_coord (int): coordinates for the center of this node on 
                 the graph.
             radius (int): the radius of this node on the graph.
+            value (int): the value this node holds.
         """
         self.node_id = node_id
         self.text_id = text_id
@@ -221,11 +224,12 @@ class BSTView:
         initialise the view of the BST
 
         parameters:
-            graph (PSG::Graph): the graph element to display the tree on
+            graph (PSG::Graph): the graph element to display the tree on.
+            window (PSG::Window): the window to draw the app in.
         """
         self.window = window
         self.graph = graph
-        self.tree_vals = {}
+        self.tree_vals = {} #mapping of node values to BSTNode objects
 
 
     def get_x_space(self, level):
@@ -309,15 +313,17 @@ class BSTView:
                 animation process.
             tree_model (Node): recursive representation of the tree.
         """
+        if height > HEIGHT_LIMIT:
+            self.display_error_string(MAX_HEIGHT_MESSAGE)
+            return
+
         previous = None
         current = None
-
-        print(path)
 
         while len(path) > 0:
             
             current = path[0]
-            self.animate_path(previous, current, height, level)
+            self.animate_path(previous, current, level)
             self.window.refresh()
             time.sleep(1)
 
@@ -326,15 +332,14 @@ class BSTView:
         self.redraw_from_model(tree_model)
 
 
-    def animate_path(self, previous, current, height, level):
+    def animate_path(self, previous, current, level):
         """
         takes an instruction generated during a bst operation and animates it
         for the user's benefit.
 
         parameters:
-            previous (string, int): the previous instruction executed
-            current (string, int): the new instruction to execute
-            height (int): the height of the tree
+            previous (string, int): the previous instruction executed.
+            current (string, int): the new instruction to execute.
             level (int): the level at which the node being acted upon is located
                 in the NEW representation of the tree. e.g. if searching, what
                 level of the tree was the node found at.
@@ -348,7 +353,7 @@ class BSTView:
         elif instruction == SWAP:
             self.animate_swap(current)
         elif instruction == INSERT:
-            self.animate_insert(previous, current, height, level)
+            self.animate_insert(previous, current, level)
         elif instruction == NOT_FOUND:
             self.display_error_string(NOT_FOUND_MESSAGE)
         elif instruction == DUPLICATE:
@@ -379,8 +384,8 @@ class BSTView:
 
         parameters:
             new_instruction (string, int): the new instruction to process. the
-            string is the name of the instruction and the int is the value of
-            the node to delete.
+                string is the name of the instruction and the int is the value 
+                of the node to delete.
         """
         delete_value = new_instruction[1]
         delete_node = self.tree_vals[delete_value]
@@ -436,7 +441,7 @@ class BSTView:
             colour, self.get_x_space(search_node.level), search_node.level)
 
 
-    def animate_insert(self, prev_instruction, new_instruction, height, level):
+    def animate_insert(self, prev_instruction, new_instruction, level):
         """
         function to animate the insertion of a node on the tree.
 
@@ -446,7 +451,6 @@ class BSTView:
                 value acted upon in the previous instruction.
             new_instruction ((string, int)): the current instruction to be 
                 executed. int is the value to insert. 
-            height (int): the height of the tree after the insertion
             level (int): the level that the new node is located at
         """
         prev_val = None
