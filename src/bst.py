@@ -26,6 +26,10 @@ class Node:
     be None or another node
     """
     def __init__(self, value, left=None, right=None):
+        """
+        parameters:
+            value (int): the value that this tree node stores.
+        """
         self.value = value
         self.left = left
         self.right = right
@@ -47,7 +51,7 @@ class Node:
 
     def no_children(self):
         """
-        determines whether node has no children
+        determines whether node has no children.
 
         returns (bool):
             true if no children for this node. false
@@ -57,7 +61,7 @@ class Node:
 
     def both_children(self):
         """
-        determines whether node has both children
+        determines whether node has both children.
 
         returns (Node):
             the one child if both children present. false
@@ -137,16 +141,13 @@ def insert(root, value):
     function to insert a node into a binary search tree.
 
     parameters:
-        root (Node): the tree to insert into
-        value (int): the value to try and insert into the tree
-        path [(string, int)]: the path and operations taken to perform the
-        insertion
+        root (Node): the tree to insert into.
+        value (int): the value to try and insert into the tree.
 
-    returns (Node, [(string, int)]):
-        the binary search tree with the new node inserted.
-        if a duplicate is encountered, the tree will be returned
-        in an identical state. second arg is the path and operations taken to 
-        perform the insertion.
+    returns (Node, [(string, int)], int, int):
+        1st value is the new tree (possibly unchanged). 2nd is the operations
+        taken to perform this action on the tree. 3rd is height of tree after
+        operation. 4th is the level the newly inserted node is located on.
     """
     if root == None:
         return (Node(value), [(INSERT, value)], 1, 0)
@@ -161,7 +162,7 @@ def insert(root, value):
 
 def h_search(root, value, path):
     """
-    helper function to search the binary search tree for a specified value
+    helper function to search the binary search tree for a specified value.
 
     parameters:
         root (Node): the tree to search
@@ -170,9 +171,7 @@ def h_search(root, value, path):
         insertion
 
     returns ((string, int)...):
-        the node located with that value if found. none if there was no
-        matching node in the binary search tree. second argument is path taken
-        to search for the value.
+        the path taken in performing this search operation on the tree.
     """
     #value can't be found in the tree
     if root == None:
@@ -283,10 +282,10 @@ def delete(root, value):
         root (Node): the tree to delete from
         value (int): the value of the node to search for and delete
 
-    returns (Node):
-        the tree in an updated state after the deletion of the node.
-        tree will be returned in an identical state if the value
-        requested for deletion does not exist.
+    returns (Node, [(string, int)], int, int):
+        1st value is the new tree (possibly unchanged). 2nd is the operations
+        taken to perform this action on the tree. 3rd is height of tree after
+        operation. 4th is the level the newly inserted node is located on.
     """
     if root == None:
         return (root, [(NOT_FOUND, value)])
@@ -303,8 +302,11 @@ def get_level(root, value):
     given a value in a bst, returns the integer level where the value is found.
 
     parameters:
-        root (Node): the bst to search for the value
-        value (int): the level where the value was found in the tree
+        root (Node): the bst to search for the value.
+        value (int): the value to be located in the tree.
+
+    returns (int):
+        the level that the given node is on in the tree.
     """
     if root == None:
         return -sys.maxsize
@@ -340,7 +342,7 @@ def inorder(root):
     parameters:
         root (Node): the tree on which the traversal will be performed
 
-    returns (list[int]):
+    returns ([int]):
         list of node values visited during the traversal
     """
     if root == None:
@@ -360,7 +362,7 @@ def preorder(root):
     parameters:
         root (Node): the tree on which the traversal will be performed
 
-    returns (list[int]):
+    returns ([int]):
         list of node values visited during the preorder traversal
     """
     if root == None:
@@ -380,7 +382,7 @@ def postorder(root):
     parameters:
         root (Node): the tree on which the traversal will be performed
 
-    returns (list[int]):
+    returns ([int]):
         list of node values visited during the postorder traversal
     """
     if root == None:
@@ -420,7 +422,7 @@ def breadth_first(root):
     parameters:
         root (Node): the binary tree to perform the traversal on
 
-    returns (list[int]):
+    returns ([int]):
         the list of node values visited during the traversal
     """
     height = get_height(root)
