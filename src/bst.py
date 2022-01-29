@@ -2,8 +2,9 @@
 binary search tree implementation. contains all basic functionality
 required to operate the tree.
 """
+
+
 import sys
-from sys import path_hooks
 
 """
 instructions describing all binary search tree operations. used to describe the
