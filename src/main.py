@@ -46,6 +46,24 @@ class BSTController:
         self.tree_model = None #underlying search tree data structure
 
 
+    def validate_input(self, value):
+        """
+        function to verify whether user-inputted value is in fact valid. the
+        value is valid if it can be expressed as an integer.
+
+        parameters:
+            value (string): the user input to test for validity.
+
+        returns (Bool):
+            true if input valid, false if not.
+        """
+        try:
+            value = int(value)
+            return True
+        except:
+            return False
+
+
     def main_loop(self):
         """
         the main loop processing input from window and displaying tree.
@@ -60,10 +78,13 @@ class BSTController:
 
             if event == sg.WIN_CLOSED:
                 break
+            
+            value = values[BST_ACTION_VAL]
+            if not self.validate_input(value):
+                continue
 
             #a tree method has been requested
             if event == BST_TREE_ACTION:
-                value = values[BST_ACTION_VAL]
                 method = values[BST_METHOD]
 
                 if method == BST_INSERT:
