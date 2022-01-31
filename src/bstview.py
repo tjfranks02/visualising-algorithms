@@ -305,7 +305,6 @@ class BSTView:
             tree_model (Node): recursive representation of the tree.
         """
         if height > HEIGHT_LIMIT:
-            self.display_error_string(MAX_HEIGHT_MESSAGE)
             return
 
         previous = None

@@ -94,7 +94,7 @@ class BSTController:
                 if method == BST_INSERT:
                     self.tree_model, instruction_queue, tree_height, \
                         current_node_level = bst.insert(self.tree_model, 
-                        int(value))
+                        int(value), HEIGHT_LIMIT)
                 elif method == BST_SEARCH:
                     self.tree_model, instruction_queue = \
                         bst.search(self.tree_model, int(value))

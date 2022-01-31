@@ -3,7 +3,7 @@ binary search tree implementation. contains all basic functionality
 required to operate the tree.
 """
 
-
+import copy
 import sys
 
 """
@@ -102,6 +102,74 @@ def create(value):
     return Node(value)
 
 
+def h_delete(root, value, path):
+    """
+    attempts to delete the node with a specified value in the tree
+
+    parameters:
+        root (Node): the tree to delete from
+        value (int): the value of the node to search for and delete
+        path [(string, int)]: the path and operations taken to perform the
+        insertion
+
+    returns (Node, (string, int)):
+        the tree in an updated state after the deletion of the node.
+        tree will be returned in an identical state if the value
+        requested for deletion does not exist.
+    """
+    #value not found
+    if root == None:
+        path.append((NOT_FOUND, value))
+        return (root, path)
+
+    if root.get_value() < value:
+        path.append((SEARCH, root.get_value()))
+        root.right, path = h_delete(root.get_right_child(), value, path)
+    elif root.get_value() > value:
+        path.append((SEARCH, root.get_value()))
+        root.left, path = h_delete(root.get_left_child(), value, path)
+    else:
+        #this is the one to delete
+        if root.no_children():
+            path.append((DELETE, value))
+            root = None
+        elif root.one_child():
+            child = root.one_child()
+            path.append((DELETE, root.get_value()))
+            root = child
+        else:
+            minimum_node = min_node(root.right)
+            root_value = root.get_value()
+            path.append((SWAP, (root_value, minimum_node.get_value())))
+            root.set_value(minimum_node.get_value())
+            minimum_node.set_value(root_value)
+            root.right, path = h_delete(root.right, root_value, path)
+    return (root, path)
+
+
+def delete(root, value):
+    """
+    attempts to delete the node with a specified value in the tree
+
+    parameters:
+        root (Node): the tree to delete from
+        value (int): the value of the node to search for and delete
+
+    returns (Node, [(string, int)], int, int):
+        1st value is the new tree (possibly unchanged). 2nd is the operations
+        taken to perform this action on the tree. 3rd is height of tree after
+        operation. 4th is the level the newly inserted node is located on.
+    """
+    if root == None:
+        return (root, [(NOT_FOUND, value)])
+
+    root, path = h_delete(root, value, [])
+    height = get_height(root)
+    level = get_level(root, value) 
+
+    return (root, path, height, level)
+
+
 def h_insert(root, value, path):
     """
     helper function to insert a node into a binary search tree.
@@ -137,13 +205,14 @@ def h_insert(root, value, path):
     return (root, path)
 
 
-def insert(root, value):
+def insert(root, value, max_height):
     """
     function to insert a node into a binary search tree.
 
     parameters:
         root (Node): the tree to insert into.
         value (int): the value to try and insert into the tree.
+        max_height (int): the maximum tree height allowed by the view
 
     returns (Node, [(string, int)], int, int):
         1st value is the new tree (possibly unchanged). 2nd is the operations
@@ -157,6 +226,10 @@ def insert(root, value):
 
     height = get_height(root)
     level = get_level(root, value)
+
+    if height > max_height:
+        root, path, height, level = delete(root, value)
+        path = []
 
     return (root, path, height, level)
 
@@ -228,74 +301,6 @@ def min_node(root):
         return root
 
     return min_node(root.left)
-
-
-def h_delete(root, value, path):
-    """
-    attempts to delete the node with a specified value in the tree
-
-    parameters:
-        root (Node): the tree to delete from
-        value (int): the value of the node to search for and delete
-        path [(string, int)]: the path and operations taken to perform the
-        insertion
-
-    returns (Node, (string, int)):
-        the tree in an updated state after the deletion of the node.
-        tree will be returned in an identical state if the value
-        requested for deletion does not exist.
-    """
-    #value not found
-    if root == None:
-        path.append((NOT_FOUND, value))
-        return (root, path)
-
-    if root.get_value() < value:
-        path.append((SEARCH, root.get_value()))
-        root.right, path = h_delete(root.get_right_child(), value, path)
-    elif root.get_value() > value:
-        path.append((SEARCH, root.get_value()))
-        root.left, path = h_delete(root.get_left_child(), value, path)
-    else:
-        #this is the one to delete
-        if root.no_children():
-            path.append((DELETE, value))
-            root = None
-        elif root.one_child():
-            child = root.one_child()
-            path.append((DELETE, root.get_value()))
-            root = child
-        else:
-            minimum_node = min_node(root.right)
-            root_value = root.get_value()
-            path.append((SWAP, (root_value, minimum_node.get_value())))
-            root.set_value(minimum_node.get_value())
-            minimum_node.set_value(root_value)
-            root.right, path = h_delete(root.right, root_value, path)
-    return (root, path)
-
-
-def delete(root, value):
-    """
-    attempts to delete the node with a specified value in the tree
-
-    parameters:
-        root (Node): the tree to delete from
-        value (int): the value of the node to search for and delete
-
-    returns (Node, [(string, int)], int, int):
-        1st value is the new tree (possibly unchanged). 2nd is the operations
-        taken to perform this action on the tree. 3rd is height of tree after
-        operation. 4th is the level the newly inserted node is located on.
-    """
-    if root == None:
-        return (root, [(NOT_FOUND, value)])
-
-    root, path = h_delete(root, value, [])
-    height = get_height(root)
-    level = get_level(root, value) 
-
-    return (root, path, height, level)
 
 
 def get_level(root, value):
