@@ -335,7 +335,6 @@ def get_height(root):
 
     return max(1 + get_height(root.left), 1 + get_height(root.right))
 
-
 def inorder(root):
     """
     perform an inorder traversal of the given binary search tree.
@@ -343,17 +342,18 @@ def inorder(root):
     parameters:
         root (Node): the tree on which the traversal will be performed
 
-    returns ([int]):
-        list of node values visited during the traversal
+    returns ((string, int)):
+        the path taken to perform this traversal.
     """
     if root == None:
         return []
 
     left_list = inorder(root.left)
-    middle_value = [root.value]
+    middle_value = root.value
     right_list = inorder(root.right)
 
-    return left_list + middle_value + right_list
+    
+    return left_list + [(SEARCH, middle_value)] + right_list
 
 
 def preorder(root):
@@ -363,17 +363,17 @@ def preorder(root):
     parameters:
         root (Node): the tree on which the traversal will be performed
 
-    returns ([int]):
-        list of node values visited during the preorder traversal
+    returns ((string, int)):
+        the path taken to perform this traversal.
     """
     if root == None:
         return []
 
-    middle_value = [root.value]
+    middle_value = root.value
     left_list = preorder(root.left)
     right_list = preorder(root.right)
 
-    return middle_value + left_list + right_list
+    return [(SEARCH, middle_value)] + left_list + right_list
 
 
 def postorder(root):    
@@ -383,17 +383,17 @@ def postorder(root):
     parameters:
         root (Node): the tree on which the traversal will be performed
 
-    returns ([int]):
-        list of node values visited during the postorder traversal
+    returns ((string, int)):
+        the path taken to perform this traversal.
     """
     if root == None:
         return []
 
     left_list = postorder(root.left)
     right_list = postorder(root.right)
-    middle_value = [root.value]
+    middle_value = root.value
 
-    return left_list + right_list + middle_value
+    return left_list + right_list + [(SEARCH, middle_value)]
 
 
 def level_values(root, level):
@@ -404,7 +404,7 @@ def level_values(root, level):
         root (Node): the binary search tree to get the values for
         level (int): the level to get the values for in the tree
 
-    returns (list[int]):
+    returns ([int]):
         the list of values at the requested level in the search tree
     """
     if root == None:
@@ -423,15 +423,16 @@ def breadth_first(root):
     parameters:
         root (Node): the binary tree to perform the traversal on
 
-    returns ([int]):
-        the list of node values visited during the traversal
+    returns ((string, int)):
+        the path taken to perform this traversal.
     """
     height = get_height(root)
     node_values = []
     level = 1
 
     while level <= height:
-        node_values += level_values(root, level)
+        node_values += map(lambda value: (SEARCH, value), 
+            level_values(root, level))
         level += 1
 
     return node_values

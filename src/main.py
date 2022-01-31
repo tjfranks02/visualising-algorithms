@@ -26,6 +26,10 @@ methods on bst tree
 BST_INSERT = "Insert"
 BST_DELETE = "Delete"
 BST_SEARCH = "Search"
+BST_BFS = "BFS"
+BST_PREORDER = "Preorder"
+BST_POSTORDER = "Postorder"
+BST_INORDER = "Inorder"
 
 
 
@@ -98,6 +102,14 @@ class BSTController:
                     self.tree_model, instruction_queue, tree_height, \
                         current_node_level = bst.delete(self.tree_model, 
                         int(value))
+                elif method == BST_BFS:
+                    instruction_queue = bst.breadth_first(self.tree_model)
+                elif method == BST_PREORDER:
+                    instruction_queue = bst.preorder(self.tree_model)
+                elif method == BST_INORDER:
+                    instruction_queue = bst.inorder(self.tree_model)
+                elif method == BST_POSTORDER:
+                    instruction_queue = bst.postorder(self.tree_model)
 
                 self.view.animation_loop(instruction_queue, tree_height, 
                     current_node_level, self.tree_model)

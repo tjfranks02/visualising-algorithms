@@ -61,6 +61,10 @@ methods on bst tree
 BST_INSERT = "Insert"
 BST_DELETE = "Delete"
 BST_SEARCH = "Search"
+BST_BFS = "BFS"
+BST_PREORDER = "Preorder"
+BST_POSTORDER = "Postorder"
+BST_INORDER = "Inorder"
 
 """
 instructions describing all binary search tree operations. used to describe the
@@ -85,7 +89,8 @@ sg.theme(THEME)
 
 INPUT_LAYOUT = [
     [sg.Text("Binary search tree")],
-    [sg.OptionMenu(values=(BST_INSERT, BST_DELETE, BST_SEARCH), 
+    [sg.OptionMenu(values=(BST_INSERT, BST_DELETE, BST_SEARCH, BST_BFS, 
+        BST_PREORDER, BST_INORDER, BST_POSTORDER), 
         default_value=BST_INSERT, key=BST_METHOD)
     ],
     [sg.Input(key=BST_ACTION_VAL, enable_events=True), 
