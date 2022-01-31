@@ -10,3 +10,12 @@ During my algorithms course, I found it really difficult to understand how a par
 The code is 100% python, with the graphical portion of the application using PySimpleGUI.
 
 ### Usage
+#### Binary Search Tree
+The binary search tree supports insert, search, delete, preorder, inorder and postorder traversals along with breadth first search.
+
+<ol>
+  <li>Select one of the available operations</li>
+  <li>Press "Perform Action" button</li>
+  <li>Watch the animation!</li>
+  <li>Repeat</li>
+</ol>
