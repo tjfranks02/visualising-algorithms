@@ -19,3 +19,4 @@ The binary search tree supports insert, search, delete, preorder, inorder and po
   <li>Watch the animation!</li>
   <li>Repeat</li>
 </ol>
+
